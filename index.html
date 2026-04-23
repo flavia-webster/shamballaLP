@@ -1,166 +1,283 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shamballa - Controle de Rebanho</title>
+    <title>Shamballa - execução em campo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Ícones Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #F4EDE4; /* Bege mais forte e terroso */
+            color: #3E2723; /* Marrom escuro */
+            overflow-x: hidden;
+        }
+
+        /* -------------------------
+           ANIMAÇÕES DE ROLAGEM
+        ------------------------- */
+        .reveal-up {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-40px);
+            transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-right {
+            opacity: 0;
+            transform: translateX(40px);
+            transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.85);
+            transition: all 0.9s cubic-bezier(0.34, 1.56, 0.64, 1); /* Leve "bounce" natural */
+        }
+        .active {
+            opacity: 1 !important;
+            transform: translate(0, 0) scale(1) !important;
+        }
+
+        /* Atrasos em cascata para animações fluídas */
+        .delay-100 { transition-delay: 100ms; }
+        .delay-200 { transition-delay: 200ms; }
+        .delay-300 { transition-delay: 300ms; }
+        .delay-400 { transition-delay: 400ms; }
+        .delay-500 { transition-delay: 500ms; }
+
+        /* Flutuação muito sutil */
+        @keyframes gentleFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+        .animate-float {
+            animation: gentleFloat 7s ease-in-out infinite;
+        }
+
+        /* Crescimento das barras dos gráficos */
+        @keyframes growBar {
+            from { transform: scaleY(0); }
+            to { transform: scaleY(1); }
+        }
+        .animate-bar {
+            transform-origin: bottom;
+            animation: growBar 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transform: scaleY(0);
+        }
+
+        /* Custom Scrollbar - Tons terrosos */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #EAE0D5; }
+        ::-webkit-scrollbar-thumb { background: #A9927D; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #8C4A26; }
     </style>
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-900 selection:bg-emerald-200">
+<body class="min-h-screen selection:bg-[#D7CCC8] selection:text-[#3E2723]">
 
-    <!-- NAVBAR -->
-    <nav class="fixed w-full bg-white/90 backdrop-blur-md z-50 border-b border-slate-100">
+    <!-- ==========================================
+         SPLASH SCREEN (Abertura em Tela Branca)
+    =========================================== -->
+    <div id="splash-bg" class="fixed inset-0 bg-white z-[100] transition-opacity duration-1000 ease-in-out"></div>
+    <div id="intro-logo" class="fixed z-[101] flex flex-col items-start justify-center cursor-default opacity-0" 
+         style="top: 50%; left: 50%; transform: translate(-50%, -50%) scale(2.8); 
+                transition: opacity 1s ease, top 1.2s cubic-bezier(0.76, 0, 0.24, 1), left 1.2s cubic-bezier(0.76, 0, 0.24, 1), transform 1.2s cubic-bezier(0.76, 0, 0.24, 1);">
+        <span class="text-2xl font-black tracking-tighter text-[#3E2723] leading-none">SHAMBALLA</span>
+        <span class="text-[0.65rem] font-bold text-[#8C4A26] uppercase tracking-widest mt-1">execução em campo</span>
+    </div>
+
+    <!-- ==========================================
+         CABEÇALHO (NAVBAR)
+    =========================================== -->
+    <nav class="fixed w-full bg-white border-b border-[#E0D4C8] z-50 transition-shadow duration-300" id="navbar">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <div class="bg-emerald-600 p-2 rounded-lg">
-                    <i data-lucide="leaf" class="w-6 h-6 text-white"></i>
-                </div>
-                <span class="text-2xl font-bold tracking-tight text-slate-800">Shamballa</span>
+            <!-- Logo Alvo (Fica invisível até a animação terminar) -->
+            <div id="navbar-logo" class="flex flex-col justify-center cursor-default opacity-0">
+                <span class="text-2xl font-black tracking-tighter text-[#3E2723] leading-none">SHAMBALLA</span>
+                <span class="text-[0.65rem] font-bold text-[#8C4A26] uppercase tracking-widest mt-1">execução em campo</span>
             </div>
-            <button class="hidden md:flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-full font-semibold transition-all shadow-lg shadow-emerald-200">
+            
+            <a href="https://wa.me/5551991540557?text=Oi!%20Gostaria%20de%20saber%20mais%20sobre%20o%20Shamballa%20e%20como%20posso%20melhorar%20o%20manejo%20da%20minha%20estância." target="_blank" class="hidden md:flex items-center gap-2 bg-[#4A6B3A] hover:bg-[#3A5F2D] text-white px-6 py-2.5 rounded-lg font-bold transition-all hover:shadow-[0_8px_15px_rgba(74,107,58,0.25)] transform hover:-translate-y-0.5 border border-[#3A5F2D]">
                 Assumir o controle <i data-lucide="arrow-right" class="w-4 h-4"></i>
-            </button>
+            </a>
         </div>
     </nav>
 
     <!-- 1. HERO SECTION -->
-    <section class="pt-32 pb-20 lg:pt-48 lg:pb-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
-        <div class="flex-1 text-center lg:text-left">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-medium text-sm mb-6">
-                <i data-lucide="activity" class="w-4 h-4"></i> Tecnologia para Pecuária de Corte
+    <section class="pt-32 pb-20 lg:pt-40 lg:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+        
+        <!-- Textos -->
+        <div class="flex-1 text-center lg:text-left reveal-left">
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-[#EAE0D5] text-[#5D4037] font-bold text-xs uppercase tracking-wider mb-8 border border-[#D7CCC8]">
+                <i data-lucide="tractor" class="w-4 h-4"></i> Gestão Pecuária
             </div>
-            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight mb-6">
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#3E2723] leading-[1.1] mb-6">
                 Controle total do teu rebanho. <br class="hidden lg:block"/>
-                <span class="text-emerald-600">Mais lucro na lida, menos desperdício.</span>
+                <span class="text-[#4A6B3A]">Mais lucro na lida, menos desperdício.</span>
             </h1>
-            <p class="text-lg sm:text-xl text-slate-600 mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                O Shamballa transforma o manejo da tua estância em dados claros. Reduz a perda de dinheiro com insumos e aumenta a produtividade de cada cabeça de gado.
+            <p class="text-lg sm:text-xl text-[#6D4C41] mb-10 max-w-2xl mx-auto lg:mx-0">
+                O Shamballa transforma o manejo da tua estância em dados claros e fáceis de ler. Reduz a perda de dinheiro com insumos e aumenta a produtividade de cada cabeça de gado, sem complicação.
             </p>
             <div class="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-                <button class="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-xl shadow-emerald-200 transform hover:-translate-y-1">
-                    👉 Começar agora
-                </button>
-                <p class="text-sm text-slate-500 font-medium mt-2 sm:mt-0">Fácil e bueno de usar.</p>
+                <a href="https://wa.me/5551991540557?text=Oi!%20Gostaria%20de%20saber%20mais%20sobre%20o%20Shamballa%20e%20como%20posso%20melhorar%20o%20manejo%20da%20minha%20estância." target="_blank" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#8C4A26] hover:bg-[#6B371A] text-white px-8 py-4 rounded-lg font-bold text-lg transition-all hover:shadow-[0_8px_20px_rgba(140,74,38,0.3)] transform hover:-translate-y-1">
+                    Começar agora
+                </a>
+                <div class="flex items-center gap-2 text-[#795548] font-medium px-4 py-2">
+                    <i data-lucide="check" class="w-5 h-5 text-[#4A6B3A]"></i> Fácil e bueno de usar.
+                </div>
             </div>
         </div>
 
-        <!-- Hero Mockup -->
-        <div class="flex-1 relative w-full max-w-md lg:max-w-full">
+        <!-- Hero Mockup (Ferramenta Prática) -->
+        <div class="flex-1 relative w-full max-w-md lg:max-w-full h-[500px] reveal-right animate-float">
+            
             <!-- Dashboard Web Background -->
-            <div class="absolute top-10 right-0 w-full h-64 bg-white rounded-xl shadow-2xl border border-slate-100 hidden lg:flex flex-col overflow-hidden transform translate-x-12">
-                <div class="h-8 bg-slate-50 border-b flex items-center px-4 gap-2">
-                    <div class="w-3 h-3 rounded-full bg-red-400"></div>
-                    <div class="w-3 h-3 rounded-full bg-amber-400"></div>
-                    <div class="w-3 h-3 rounded-full bg-emerald-400"></div>
+            <div class="absolute top-10 right-0 w-[110%] h-64 bg-white rounded-lg shadow-[0_20px_40px_rgba(62,39,35,0.08)] border border-[#E0D4C8] hidden lg:flex flex-col overflow-hidden transform translate-x-8">
+                <div class="h-10 bg-[#FAF8F5] border-b border-[#E0D4C8] flex items-center px-4 gap-4">
+                    <div class="text-xs font-bold text-[#8D6E63] uppercase tracking-wider">Visão Geral da Estância</div>
                 </div>
                 <div class="p-4 grid grid-cols-3 gap-4">
-                    <div class="col-span-1 bg-emerald-50 rounded p-3"><div class="h-2 bg-emerald-200 rounded w-1/2 mb-2"></div><div class="h-6 bg-emerald-300 rounded w-3/4"></div></div>
-                    <div class="col-span-1 bg-slate-50 rounded p-3"><div class="h-2 bg-slate-200 rounded w-1/2 mb-2"></div><div class="h-6 bg-slate-300 rounded w-3/4"></div></div>
-                    <div class="col-span-1 bg-slate-50 rounded p-3"><div class="h-2 bg-slate-200 rounded w-1/2 mb-2"></div><div class="h-6 bg-slate-300 rounded w-3/4"></div></div>
-                    <div class="col-span-3 h-24 bg-slate-50 rounded mt-2 flex items-end px-2 pb-2 gap-2">
-                        <div class="flex-1 bg-emerald-400 rounded-t" style="height: 40%"></div>
-                        <div class="flex-1 bg-emerald-400 rounded-t" style="height: 70%"></div>
-                        <div class="flex-1 bg-emerald-400 rounded-t" style="height: 45%"></div>
-                        <div class="flex-1 bg-emerald-400 rounded-t" style="height: 90%"></div>
-                        <div class="flex-1 bg-emerald-400 rounded-t" style="height: 65%"></div>
-                        <div class="flex-1 bg-emerald-400 rounded-t" style="height: 80%"></div>
-                        <div class="flex-1 bg-emerald-400 rounded-t" style="height: 100%"></div>
+                    <div class="col-span-1 bg-[#F4EDE4] border border-[#E0D4C8] rounded p-3 hover:border-[#8C4A26]/40 transition-colors cursor-default">
+                        <div class="text-xs text-[#8D6E63] font-bold uppercase mb-1">Gado Pasto</div>
+                        <div class="text-lg font-black text-[#3E2723]">1.240 <span class="text-xs font-normal">cb</span></div>
+                    </div>
+                    <div class="col-span-1 bg-[#F4EDE4] border border-[#E0D4C8] rounded p-3 hover:border-[#8C4A26]/40 transition-colors cursor-default">
+                        <div class="text-xs text-[#8D6E63] font-bold uppercase mb-1">Confinamento</div>
+                        <div class="text-lg font-black text-[#3E2723]">450 <span class="text-xs font-normal">cb</span></div>
+                    </div>
+                    <div class="col-span-1 bg-[#F4EDE4] border border-[#E0D4C8] rounded p-3 hover:border-red-900/30 transition-colors cursor-default">
+                        <div class="text-xs text-[#8D6E63] font-bold uppercase mb-1">Mortalidade</div>
+                        <div class="text-lg font-black text-[#B71C1C]">0.8%</div>
+                    </div>
+                    <!-- Barras Animadas -->
+                    <div class="col-span-3 h-24 mt-2 flex items-end gap-2 border-b border-[#E0D4C8] pb-1">
+                        <div class="flex-1 bg-[#A2B596] rounded-t animate-bar delay-100" style="height: 40%;"></div>
+                        <div class="flex-1 bg-[#A2B596] rounded-t animate-bar delay-200" style="height: 70%;"></div>
+                        <div class="flex-1 bg-[#A2B596] rounded-t animate-bar delay-300" style="height: 45%;"></div>
+                        <div class="flex-1 bg-[#4A6B3A] rounded-t animate-bar delay-400" style="height: 90%;"></div>
+                        <div class="flex-1 bg-[#A2B596] rounded-t animate-bar delay-200" style="height: 65%;"></div>
+                        <div class="flex-1 bg-[#A2B596] rounded-t animate-bar delay-100" style="height: 80%;"></div>
+                        <div class="flex-1 bg-[#4A6B3A] rounded-t animate-bar" style="height: 100%;"></div>
                     </div>
                 </div>
             </div>
             
             <!-- App Mobile Foreground -->
-            <div class="relative mx-auto w-72 h-[500px] bg-slate-900 rounded-[3rem] border-8 border-slate-900 shadow-2xl overflow-hidden z-10">
-                <div class="absolute top-0 w-full h-6 bg-slate-900 rounded-b-3xl flex justify-center">
-                    <div class="w-20 h-4 bg-black rounded-full mt-1"></div>
-                </div>
-                <div class="w-full h-full bg-slate-50 flex flex-col">
-                    <div class="bg-emerald-600 text-white p-6 pt-10 rounded-b-3xl shadow-sm">
-                        <p class="opacity-80 text-sm">Visão da Lida</p>
-                        <h3 class="text-2xl font-bold">Lote #42 Engorda</h3>
+            <div class="absolute lg:right-10 top-0 mx-auto w-72 h-[480px] bg-[#3E2723] rounded-3xl border-8 border-[#3E2723] shadow-2xl overflow-hidden z-10 transition-transform duration-500 hover:-translate-y-2">
+                <div class="w-full h-full bg-[#F4EDE4] flex flex-col">
+                    <!-- Cabeçalho do App -->
+                    <div class="bg-[#4A6B3A] text-white p-5 pt-8 shadow-sm">
+                        <p class="text-[#C5D8B6] text-xs font-bold uppercase tracking-wider mb-1">Visão da Lida</p>
+                        <h3 class="text-2xl font-black">Lote #42<br/>Engorda</h3>
                     </div>
+
+                    <!-- Conteúdo do App -->
                     <div class="p-4 flex-1 flex flex-col gap-3">
-                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div class="bg-white border border-[#E0D4C8] p-4 rounded-lg flex items-center justify-between shadow-sm cursor-pointer hover:bg-[#FAF8F5] transition-colors group">
                             <div class="flex items-center gap-3">
-                                <div class="bg-emerald-100 p-2 rounded-lg text-emerald-600"><i data-lucide="activity" class="w-5 h-5"></i></div>
-                                <div><p class="text-sm text-slate-500">GMD</p><p class="font-bold">1.2 kg/dia</p></div>
+                                <i data-lucide="activity" class="w-5 h-5 text-[#4A6B3A] group-hover:scale-110 transition-transform"></i>
+                                <div>
+                                    <p class="text-[10px] font-bold text-[#8D6E63] uppercase">Ganho Médio Diário</p>
+                                    <p class="font-black text-[#3E2723]">1.2 kg <span class="text-sm font-normal text-[#8D6E63]">/dia</span></p>
+                                </div>
                             </div>
-                            <i data-lucide="chevron-right" class="w-5 h-5 text-slate-300"></i>
                         </div>
-                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        
+                        <div class="bg-white border border-[#E0D4C8] p-4 rounded-lg flex items-center justify-between shadow-sm cursor-pointer hover:bg-[#FAF8F5] transition-colors group">
                             <div class="flex items-center gap-3">
-                                <div class="bg-amber-100 p-2 rounded-lg text-amber-600"><i data-lucide="wheat" class="w-5 h-5"></i></div>
-                                <div><p class="text-sm text-slate-500">Custo Dieta</p><p class="font-bold">R$ 8,40/cb</p></div>
+                                <i data-lucide="wheat" class="w-5 h-5 text-[#8C4A26] group-hover:scale-110 transition-transform"></i>
+                                <div>
+                                    <p class="text-[10px] font-bold text-[#8D6E63] uppercase">Custo Dieta</p>
+                                    <p class="font-black text-[#3E2723]">R$ 8,40 <span class="text-sm font-normal text-[#8D6E63]">/cb</span></p>
+                                </div>
                             </div>
-                            <i data-lucide="chevron-right" class="w-5 h-5 text-slate-300"></i>
                         </div>
-                        <button class="mt-auto w-full bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-md">
+
+                        <!-- Botão Ação App -->
+                        <div class="mt-auto mb-2 bg-[#8C4A26] hover:bg-[#6B371A] text-white text-center py-3 rounded-lg font-bold cursor-pointer transition-colors active:scale-95 shadow-md">
                             + Registrar Manejo
-                        </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 2. PROBLEMA -->
-    <section class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto mb-16">
-                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-6">Tu sabes quanto <span class="text-red-500">realmente</span> sobra por cabeça?</h2>
-                <p class="text-lg text-slate-600">
-                    Muitos pecuaristas tocam a estância no "olhômetro". Sem histórico claro e controle de custos na ponta do lápis, a perda de dinheiro é invisível e silenciosa.
+    <!-- ==========================================
+         2. PROBLEMA (AGORA COM VÍDEO DE FUNDO)
+    =========================================== -->
+    <section class="relative py-24 border-y border-[#3E2723] overflow-hidden">
+        
+        <!-- Video Background (Cobre toda a seção) -->
+        <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover z-0">
+            <!-- COLOQUE AQUI O LINK DO SEU VÍDEO DA LIDA -->
+            <source src="https://cdn.pixabay.com/video/2019/04/10/22878-331201920_large.mp4" type="video/mp4">
+        </video>
+        
+        <!-- Overlay Escurecido Rústico (Transição e Película de Contraste) -->
+        <div class="absolute inset-0 bg-gradient-to-b from-[#2D1B16]/95 via-[#3E2723]/85 to-[#2D1B16]/95 z-10 backdrop-blur-[2px]"></div>
+
+        <!-- Conteúdo por cima do vídeo -->
+        <div class="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16 reveal-up">
+                <h2 class="text-3xl md:text-4xl lg:text-5xl font-black text-[#F4EDE4] mb-4 drop-shadow-lg leading-tight">
+                    Tu sabes quanto <span class="text-[#EF4444]">realmente</span> sobra por cabeça?
+                </h2>
+                <p class="text-lg md:text-xl text-[#D7CCC8] drop-shadow-md">
+                    Muitos pecuaristas tocam a estância no "olhômetro". Sem histórico claro e controle de custos na ponta do lápis, a perda de dinheiro é silenciosa e afunda a operação.
                 </p>
             </div>
 
-            <div class="grid md:grid-cols-3 gap-8 mb-12">
-                <div class="bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:border-red-100 hover:bg-red-50/50 transition-colors">
-                    <div class="text-slate-400 mb-4"><i data-lucide="wheat" class="w-8 h-8"></i></div>
-                    <h3 class="text-xl font-bold text-slate-800 mb-2">Nutrição no Cocho</h3>
-                    <p class="text-slate-600">É a maior fatia do custo. Desperdícios ou erros na dieta comem direto a tua margem de lucro.</p>
+            <div class="grid md:grid-cols-3 gap-6 mb-12">
+                <!-- Card 1 -->
+                <div class="reveal-scale delay-100 bg-[#FAF8F5]/95 backdrop-blur-sm rounded-xl p-8 border border-[#E0D4C8]/50 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:border-[#8C4A26] transition-all duration-300">
+                    <div class="text-[#8C4A26] mb-4 bg-[#F4EDE4] w-14 h-14 rounded-lg flex items-center justify-center border border-[#E0D4C8] shadow-inner"><i data-lucide="wheat" class="w-7 h-7"></i></div>
+                    <h3 class="text-xl font-bold text-[#3E2723] mb-2">Nutrição no Cocho</h3>
+                    <p class="text-[#6D4C41]">É a maior fatia do custo. Desperdícios ou erros na dieta comem direto a tua margem de lucro. Sem medir, tu jogas ração fora.</p>
                 </div>
-                <div class="bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:border-red-100 hover:bg-red-50/50 transition-colors">
-                    <div class="text-slate-400 mb-4"><i data-lucide="dollar-sign" class="w-8 h-8"></i></div>
-                    <h3 class="text-xl font-bold text-slate-800 mb-2">Giro do Gado</h3>
-                    <p class="text-slate-600">Pagar no bezerro sem saber a projeção clara de saída do boi gordo é uma aposta de alto risco.</p>
+                <!-- Card 2 -->
+                <div class="reveal-scale delay-200 bg-[#FAF8F5]/95 backdrop-blur-sm rounded-xl p-8 border border-[#E0D4C8]/50 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:border-[#4A6B3A] transition-all duration-300">
+                    <div class="text-[#4A6B3A] mb-4 bg-[#E8F0E3] w-14 h-14 rounded-lg flex items-center justify-center border border-[#C5D8B6] shadow-inner"><i data-lucide="dollar-sign" class="w-7 h-7"></i></div>
+                    <h3 class="text-xl font-bold text-[#3E2723] mb-2">Giro do Gado</h3>
+                    <p class="text-[#6D4C41]">Pagar no bezerro sem saber a projeção clara de saída do boi gordo é uma aposta de alto risco. Precisas de datas e pesos certos.</p>
                 </div>
-                <div class="bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:border-red-100 hover:bg-red-50/50 transition-colors">
-                    <div class="text-slate-400 mb-4"><i data-lucide="syringe" class="w-8 h-8"></i></div>
-                    <h3 class="text-xl font-bold text-slate-800 mb-2">Manejo e Sanidade</h3>
-                    <p class="text-slate-600">Falta de controle sanitário na mangueira gera atraso no ganho de peso e custos com retrabalho.</p>
+                <!-- Card 3 -->
+                <div class="reveal-scale delay-300 bg-[#FAF8F5]/95 backdrop-blur-sm rounded-xl p-8 border border-[#E0D4C8]/50 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:border-[#1E40AF] transition-all duration-300">
+                    <div class="text-[#1E40AF] mb-4 bg-[#E0E7FF] w-14 h-14 rounded-lg flex items-center justify-center border border-[#C7D2FE] shadow-inner"><i data-lucide="syringe" class="w-7 h-7"></i></div>
+                    <h3 class="text-xl font-bold text-[#3E2723] mb-2">Manejo e Sanidade</h3>
+                    <p class="text-[#6D4C41]">Falta de controle sanitário na mangueira gera atraso no ganho de peso, carência de vacinas vencidas e custos com retrabalho.</p>
                 </div>
             </div>
             
-            <div class="bg-slate-900 rounded-2xl p-8 text-center border-l-4 border-red-500 shadow-xl">
-                <p class="text-xl md:text-2xl font-medium text-white flex flex-col md:flex-row items-center justify-center gap-3">
-                    <i data-lucide="alert-triangle" class="text-red-500 w-8 h-8"></i>
-                    Sem controle na mangueira, o teu lucro real fica escondido.
+            <!-- Caixa de Alerta (Ajustada para o fundo escuro) -->
+            <div class="reveal-up delay-400 bg-[#7F1D1D]/80 backdrop-blur-md rounded-xl p-6 border border-[#EF4444]/40 text-center shadow-2xl">
+                <p class="text-lg md:text-xl font-bold text-[#FEF2F2] flex flex-col md:flex-row items-center justify-center gap-3">
+                    <i data-lucide="alert-triangle" class="text-[#FECACA] w-7 h-7 animate-pulse"></i>
+                    Sem controle e anotação na mangueira, o teu lucro real fica escondido.
                 </p>
             </div>
         </div>
     </section>
 
     <!-- 3. OPORTUNIDADE -->
-    <section class="py-20 bg-emerald-50 relative overflow-hidden">
-        <div class="absolute -top-24 -right-24 w-96 h-96 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
-        <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-emerald-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
-
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-            <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-8">Pequenos ajustes na lida geram grandes lucros</h2>
-            <div class="space-y-6 text-lg text-slate-700">
+    <!-- Fundo Bege Médio/Areia Texturizado -->
+    <section class="py-24 bg-[#EAE0D5]">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center reveal-up">
+            <h2 class="text-3xl md:text-4xl font-black text-[#3E2723] mb-6">Pequenos ajustes na lida geram grandes lucros</h2>
+            <div class="text-lg text-[#5D4037] space-y-6">
                 <p>
-                    O ganho de peso e a eficiência alimentar definem se a operação fecha no azul ou no vermelho. Quem não acompanha indicador básico, como o Ganho Médio Diário (GMD), deixa dinheiro na mesa.
+                    O ganho de peso e a eficiência alimentar definem se a operação fecha no azul ou no vermelho. Quem não acompanha indicador básico, deixa dinheiro na mesa todo dia.
                 </p>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-emerald-100 inline-block text-left w-full">
-                    <p class="font-semibold text-xl text-emerald-800 flex items-start gap-3">
-                        <span class="bg-emerald-100 p-1 rounded mt-1"><i data-lucide="trending-up" class="w-6 h-6 text-emerald-600"></i></span>
-                        "A margem da pecuária não aceita desaforo. Transformar o que acontece lá no pasto em dados pro escritório é o que diferencia quem empata de quem ganha dinheiro."
+                <div class="bg-white p-6 md:p-8 rounded-xl border border-[#D7CCC8] text-left shadow-[0_15px_30px_rgba(62,39,35,0.05)] transform hover:scale-[1.02] transition-transform duration-500">
+                    <p class="font-bold text-lg text-[#3E2723] flex items-start gap-4">
+                        <i data-lucide="quote" class="w-8 h-8 text-[#8C4A26]/30 flex-shrink-0"></i>
+                        "A margem da pecuária não aceita desaforo. Transformar o que acontece lá no pasto em dados de fácil leitura pro escritório é o que diferencia quem empata de quem ganha dinheiro."
                     </p>
                 </div>
             </div>
@@ -168,95 +285,112 @@
     </section>
 
     <!-- 4. SOLUÇÃO (SHAMBALLA) -->
-    <section class="py-24 bg-white">
+    <section class="py-24 bg-white border-y border-[#E0D4C8]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">O Shamballa coloca a tua fazenda sob controle</h2>
-                <p class="text-xl text-slate-600 max-w-2xl mx-auto">O que acontece na mangueira vira dado. O dado vira decisão.</p>
+            <div class="text-center mb-16 reveal-up">
+                <h2 class="text-3xl md:text-4xl font-black text-[#3E2723] mb-4">O Shamballa coloca a tua fazenda sob controle</h2>
+                <p class="text-xl text-[#6D4C41] max-w-2xl mx-auto">O que acontece na mangueira vira dado. O dado vira decisão.</p>
             </div>
 
-            <div class="grid md:grid-cols-2 gap-12 items-center">
+            <div class="grid md:grid-cols-2 gap-8 items-stretch">
                 <!-- Campo -->
-                <div class="bg-slate-50 p-10 rounded-3xl border border-slate-100 relative overflow-hidden group hover:shadow-lg transition-shadow">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                    <i data-lucide="smartphone" class="w-12 h-12 text-emerald-600 mb-6 relative z-10"></i>
-                    <h3 class="text-2xl font-bold text-slate-900 mb-4 relative z-10">📱 Na mangueira (App)</h3>
-                    <ul class="space-y-4 relative z-10">
-                        <li class="flex items-center gap-3 text-slate-700"><i data-lucide="check-circle" class="w-6 h-6 text-emerald-500 flex-shrink-0"></i> Registro ágil no momento do manejo</li>
-                        <li class="flex items-center gap-3 text-slate-700"><i data-lucide="check-circle" class="w-6 h-6 text-emerald-500 flex-shrink-0"></i> Funciona sem internet lá pro fundo do campo</li>
-                        <li class="flex items-center gap-3 text-slate-700"><i data-lucide="check-circle" class="w-6 h-6 text-emerald-500 flex-shrink-0"></i> Controle preciso por lote ou cabeça</li>
+                <div class="reveal-left bg-[#FAF8F5] p-8 md:p-10 rounded-xl border border-[#E0D4C8] hover:shadow-[0_15px_40px_rgba(62,39,35,0.08)] transition-shadow">
+                    <div class="bg-white border border-[#E0D4C8] w-16 h-16 rounded-lg flex items-center justify-center mb-6 shadow-sm">
+                        <i data-lucide="smartphone" class="w-8 h-8 text-[#4A6B3A]"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-[#3E2723] mb-6">Na mangueira (Aplicativo)</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3 text-[#5D4037] font-medium group reveal-up delay-100">
+                            <i data-lucide="check" class="w-5 h-5 text-[#4A6B3A] flex-shrink-0 mt-0.5 group-hover:scale-125 transition-transform"></i> 
+                            Registro rápido e fácil no momento do manejo.
+                        </li>
+                        <li class="flex items-start gap-3 text-[#5D4037] font-medium group reveal-up delay-200">
+                            <i data-lucide="check" class="w-5 h-5 text-[#4A6B3A] flex-shrink-0 mt-0.5 group-hover:scale-125 transition-transform"></i> 
+                            Funciona sem internet lá pro fundo do campo.
+                        </li>
+                        <li class="flex items-start gap-3 text-[#5D4037] font-medium group reveal-up delay-300">
+                            <i data-lucide="check" class="w-5 h-5 text-[#4A6B3A] flex-shrink-0 mt-0.5 group-hover:scale-125 transition-transform"></i> 
+                            Controle prático por lote ou por cabeça de gado.
+                        </li>
                     </ul>
                 </div>
 
                 <!-- Escritório -->
-                <div class="bg-slate-50 p-10 rounded-3xl border border-slate-100 relative overflow-hidden group hover:shadow-lg transition-shadow">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                    <i data-lucide="monitor" class="w-12 h-12 text-blue-600 mb-6 relative z-10"></i>
-                    <h3 class="text-2xl font-bold text-slate-900 mb-4 relative z-10">💻 Na sede (Web)</h3>
-                    <ul class="space-y-4 relative z-10">
-                        <li class="flex items-center gap-3 text-slate-700"><i data-lucide="check-circle" class="w-6 h-6 text-blue-500 flex-shrink-0"></i> Histórico completo e organizado do rebanho</li>
-                        <li class="flex items-center gap-3 text-slate-700"><i data-lucide="check-circle" class="w-6 h-6 text-blue-500 flex-shrink-0"></i> Gestão de custos e acompanhamento da produção</li>
-                        <li class="flex items-center gap-3 text-slate-700"><i data-lucide="check-circle" class="w-6 h-6 text-blue-500 flex-shrink-0"></i> Alertas para tomar a decisão certa na hora certa</li>
+                <div class="reveal-right bg-[#FAF8F5] p-8 md:p-10 rounded-xl border border-[#E0D4C8] hover:shadow-[0_15px_40px_rgba(62,39,35,0.08)] transition-shadow">
+                    <div class="bg-white border border-[#E0D4C8] w-16 h-16 rounded-lg flex items-center justify-center mb-6 shadow-sm">
+                        <i data-lucide="monitor" class="w-8 h-8 text-[#8C4A26]"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-[#3E2723] mb-6">Na sede (Computador)</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3 text-[#5D4037] font-medium group reveal-up delay-100">
+                            <i data-lucide="check" class="w-5 h-5 text-[#8C4A26] flex-shrink-0 mt-0.5 group-hover:scale-125 transition-transform"></i> 
+                            Histórico completo e organizado de todo o rebanho.
+                        </li>
+                        <li class="flex items-start gap-3 text-[#5D4037] font-medium group reveal-up delay-200">
+                            <i data-lucide="check" class="w-5 h-5 text-[#8C4A26] flex-shrink-0 mt-0.5 group-hover:scale-125 transition-transform"></i> 
+                            Gestão de custos e acompanhamento da produção.
+                        </li>
+                        <li class="flex items-start gap-3 text-[#5D4037] font-medium group reveal-up delay-300">
+                            <i data-lucide="check" class="w-5 h-5 text-[#8C4A26] flex-shrink-0 mt-0.5 group-hover:scale-125 transition-transform"></i> 
+                            Telas limpas, direto ao ponto para tomar a decisão certa.
+                        </li>
                     </ul>
                 </div>
             </div>
             
-            <div class="mt-12 flex justify-center items-center gap-4 text-emerald-700 font-bold text-lg bg-emerald-50 py-4 px-8 rounded-full w-max mx-auto border border-emerald-100 text-center">
-                <i data-lucide="zap" class="w-6 h-6 flex-shrink-0"></i> Tudo integrado sem complicação.
+            <div class="reveal-up mt-12 flex justify-center">
+                <div class="bg-[#F4EDE4] text-[#5D4037] border border-[#D7CCC8] font-bold px-6 py-3 rounded text-center shadow-sm">
+                    Tudo integrado, da mangueira ao escritório, sem planilhas confusas.
+                </div>
             </div>
         </div>
     </section>
 
     <!-- 5. COMO AUMENTA O LUCRO -->
-    <section class="py-24 bg-slate-900 text-white">
+    <!-- Fundo Marrom Terroso Escuro -->
+    <section class="py-24 bg-[#3E2723]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl md:text-5xl font-extrabold mb-6">Mais controle da estância = <span class="text-emerald-400">mais dinheiro no bolso</span></h2>
+            <div class="text-center mb-16 reveal-up">
+                <h2 class="text-3xl md:text-4xl font-black text-[#F4EDE4] mb-4">Mais controle da estância = <br/><span class="text-[#D7CCC8]">mais dinheiro no bolso</span></h2>
             </div>
 
-            <div class="grid md:grid-cols-3 gap-8">
+            <div class="grid md:grid-cols-3 gap-6">
                 <!-- Pilar 1 -->
-                <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700">
-                    <div class="bg-emerald-500/20 w-16 h-16 rounded-xl flex items-center justify-center mb-6">
-                        <i data-lucide="dollar-sign" class="w-8 h-8 text-emerald-400"></i>
-                    </div>
-                    <h3 class="text-xl font-bold mb-4">1. Freio nos Custos</h3>
-                    <ul class="space-y-3 text-slate-300 mb-6">
-                        <li>• Gestão firme de vacina, carrapaticida e sal mineral</li>
+                <div class="reveal-scale delay-100 bg-[#4E342E] p-8 rounded-xl border border-[#5D4037] hover:-translate-y-1 transition-transform hover:border-[#8C4A26]">
+                    <div class="text-[#D7CCC8] mb-4"><i data-lucide="dollar-sign" class="w-8 h-8"></i></div>
+                    <h3 class="text-xl font-bold text-white mb-4">1. Freio nos Custos</h3>
+                    <ul class="space-y-2 text-[#BCAAA4] mb-6 font-medium text-sm">
+                        <li>• Gestão firme de vacina e sal mineral</li>
                         <li>• Fim do desperdício no trato do cocho</li>
                     </ul>
-                    <div class="bg-slate-700/50 p-4 rounded-lg text-sm border-l-2 border-emerald-500">
-                        <span class="text-emerald-400 font-bold">👉 Visão:</span> A alimentação leva boa parte do teu capital. Segurar as rédeas do custo é o que salva a margem do pecuarista.
+                    <div class="bg-[#3E2723] p-4 rounded text-sm border-l-2 border-[#8C4A26] text-[#A1887F]">
+                        A alimentação leva boa parte do teu capital. Segurar as rédeas do custo salva a margem.
                     </div>
                 </div>
 
                 <!-- Pilar 2 -->
-                <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700">
-                    <div class="bg-emerald-500/20 w-16 h-16 rounded-xl flex items-center justify-center mb-6">
-                        <i data-lucide="trending-up" class="w-8 h-8 text-emerald-400"></i>
-                    </div>
-                    <h3 class="text-xl font-bold mb-4">2. Rendimento de Carcaça</h3>
-                    <ul class="space-y-3 text-slate-300 mb-6">
-                        <li>• Acompanhamento do ganho de peso sem chute</li>
-                        <li>• Separar gado ponteiro do gado fundo de lote</li>
+                <div class="reveal-scale delay-200 bg-[#4E342E] p-8 rounded-xl border border-[#5D4037] hover:-translate-y-1 transition-transform hover:border-[#8C4A26]">
+                    <div class="text-[#D7CCC8] mb-4"><i data-lucide="trending-up" class="w-8 h-8"></i></div>
+                    <h3 class="text-xl font-bold text-white mb-4">2. Rendimento de Carcaça</h3>
+                    <ul class="space-y-2 text-[#BCAAA4] mb-6 font-medium text-sm">
+                        <li>• Acompanhamento de ganho de peso real</li>
+                        <li>• Separar gado ponteiro do gado de fundo</li>
                     </ul>
-                    <div class="bg-slate-700/50 p-4 rounded-lg text-sm border-l-2 border-emerald-500">
-                        <span class="text-emerald-400 font-bold">👉 Visão:</span> Identificar quem come e não engorda permite giro mais rápido e descarte inteligente.
+                    <div class="bg-[#3E2723] p-4 rounded text-sm border-l-2 border-[#8C4A26] text-[#A1887F]">
+                        Identificar quem come e não engorda permite o descarte inteligente e rápido.
                     </div>
                 </div>
 
                 <!-- Pilar 3 -->
-                <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700">
-                    <div class="bg-emerald-500/20 w-16 h-16 rounded-xl flex items-center justify-center mb-6">
-                        <i data-lucide="bar-chart-3" class="w-8 h-8 text-emerald-400"></i>
-                    </div>
-                    <h3 class="text-xl font-bold mb-4">3. Decisão com Fundamento</h3>
-                    <ul class="space-y-3 text-slate-300 mb-6">
-                        <li>• Saber qual pastagem ou lote tá dando retorno</li>
-                        <li>• Ajuste rápido de rota se a estratégia falhar</li>
+                <div class="reveal-scale delay-300 bg-[#4E342E] p-8 rounded-xl border border-[#5D4037] hover:-translate-y-1 transition-transform hover:border-[#8C4A26]">
+                    <div class="text-[#D7CCC8] mb-4"><i data-lucide="bar-chart-3" class="w-8 h-8"></i></div>
+                    <h3 class="text-xl font-bold text-white mb-4">3. Decisão com Fundamento</h3>
+                    <ul class="space-y-2 text-[#BCAAA4] mb-6 font-medium text-sm">
+                        <li>• Saber qual pastagem dá mais retorno</li>
+                        <li>• Ajuste de rota rápido e fácil</li>
                     </ul>
-                    <div class="bg-slate-700/50 p-4 rounded-lg text-sm border-l-2 border-emerald-500">
-                        <span class="text-emerald-400 font-bold">👉 Visão:</span> Fim do achismo. Decisão técnica baseada no que a tua própria balança mostra.
+                    <div class="bg-[#3E2723] p-4 rounded text-sm border-l-2 border-[#8C4A26] text-[#A1887F]">
+                        Fim do achismo. Decisão técnica baseada no que a tua própria balança mostra.
                     </div>
                 </div>
             </div>
@@ -264,139 +398,217 @@
     </section>
 
     <!-- 6. DIFERENCIAL -->
-    <section class="py-20 bg-emerald-600 text-white">
+    <!-- Fundo Verde Rústico/Musgo -->
+    <section class="py-24 bg-[#2D3A2A] text-white border-y border-[#1B2419]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="text-3xl md:text-4xl font-bold text-center mb-16">Feito para quem conhece a lida campeira</h2>
+            <div class="text-center mb-16 reveal-up">
+                <span class="text-[#A2B596] font-bold tracking-widest uppercase text-sm mb-2 block">Pela Lógica Campeira</span>
+                <h2 class="text-3xl md:text-4xl font-black text-[#F4EDE4]">Feito para quem conhece a lida</h2>
+            </div>
             
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-                <div class="bg-emerald-700 p-6 rounded-2xl text-center shadow-inner">
-                    <i data-lucide="wifi-off" class="w-10 h-10 mx-auto mb-4 text-emerald-200"></i>
-                    <h4 class="font-bold text-lg">Bate no Offline</h4>
-                    <p class="text-sm text-emerald-200 mt-2">Sem sinal de celular? Funciona igual.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="reveal-up delay-100 bg-[#3B4C38] p-6 rounded-xl text-center border border-[#485D45] hover:bg-[#43573F] transition-colors shadow-sm">
+                    <i data-lucide="wifi-off" class="w-8 h-8 mx-auto mb-4 text-[#C5D8B6]"></i>
+                    <h4 class="font-bold text-lg mb-2 text-[#F4EDE4]">Bate no Offline</h4>
+                    <p class="text-[#A2B596] text-sm">Sem sinal de celular? O aplicativo funciona igual lá no fundo do campo.</p>
                 </div>
-                <div class="bg-emerald-700 p-6 rounded-2xl text-center shadow-inner">
-                    <i data-lucide="users" class="w-10 h-10 mx-auto mb-4 text-emerald-200"></i>
-                    <h4 class="font-bold text-lg">Bem Prático</h4>
-                    <p class="text-sm text-emerald-200 mt-2">Pro peão e pro capataz mexerem</p>
+                <div class="reveal-up delay-200 bg-[#3B4C38] p-6 rounded-xl text-center border border-[#485D45] hover:bg-[#43573F] transition-colors shadow-sm">
+                    <i data-lucide="users" class="w-8 h-8 mx-auto mb-4 text-[#C5D8B6]"></i>
+                    <h4 class="font-bold text-lg mb-2 text-[#F4EDE4]">Bem Prático</h4>
+                    <p class="text-[#A2B596] text-sm">Desenhado pro peão e pro capataz mexerem, sem botões confusos.</p>
                 </div>
-                <div class="bg-emerald-700 p-6 rounded-2xl text-center shadow-inner">
-                    <i data-lucide="shield-check" class="w-10 h-10 mx-auto mb-4 text-emerald-200"></i>
-                    <h4 class="font-bold text-lg">Manejo em Lote</h4>
-                    <p class="text-sm text-emerald-200 mt-2">Preparado pro grande volume</p>
+                <div class="reveal-up delay-300 bg-[#3B4C38] p-6 rounded-xl text-center border border-[#485D45] hover:bg-[#43573F] transition-colors shadow-sm">
+                    <i data-lucide="shield-check" class="w-8 h-8 mx-auto mb-4 text-[#C5D8B6]"></i>
+                    <h4 class="font-bold text-lg mb-2 text-[#F4EDE4]">Manejo em Lote</h4>
+                    <p class="text-[#A2B596] text-sm">Preparado para processar um grande volume sem travar no brete.</p>
                 </div>
-                <div class="bg-emerald-700 p-6 rounded-2xl text-center shadow-inner">
-                    <i data-lucide="zap" class="w-10 h-10 mx-auto mb-4 text-emerald-200"></i>
-                    <h4 class="font-bold text-lg">Bem Ligeiro</h4>
-                    <p class="text-sm text-emerald-200 mt-2">Não tranca o andamento no brete</p>
+                <div class="reveal-up delay-400 bg-[#3B4C38] p-6 rounded-xl text-center border border-[#485D45] hover:bg-[#43573F] transition-colors shadow-sm">
+                    <i data-lucide="zap" class="w-8 h-8 mx-auto mb-4 text-[#C5D8B6]"></i>
+                    <h4 class="font-bold text-lg mb-2 text-[#F4EDE4]">Bem Ligeiro</h4>
+                    <p class="text-[#A2B596] text-sm">O aplicativo não tranca o andamento e nem o fluxo da lida.</p>
                 </div>
             </div>
 
-            <div class="text-center">
-                <p class="text-xl md:text-2xl font-bold bg-white text-emerald-800 inline-block px-8 py-4 rounded-full shadow-lg">
-                    👉 Não é frescura de sistema. É ferramenta de trabalho.
-                </p>
+            <div class="text-center reveal-up delay-200">
+                <div class="bg-[#F4EDE4] text-[#2D3A2A] font-bold inline-block px-8 py-3 rounded shadow-lg text-lg border border-[#D7CCC8]">
+                    Não é sistema complicado de escritório. É ferramenta de trabalho de campo.
+                </div>
             </div>
         </div>
     </section>
 
     <!-- 7. CASOS DE USO -->
-    <section class="py-24 bg-slate-50">
+    <!-- Retornando ao Bege Forte -->
+    <section class="py-24 bg-[#EAE0D5]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Do curral à invernada, te atende em toda a lida</h2>
+            <div class="text-center mb-16 reveal-up">
+                <h2 class="text-3xl md:text-4xl font-black text-[#3E2723] mb-4">Do curral à invernada, te atende em toda a lida</h2>
             </div>
 
             <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                        <i data-lucide="syringe" class="w-6 h-6 text-blue-600"></i>
-                    </div>
-                    <h4 class="font-bold text-lg mb-2">Sanidade</h4>
-                    <p class="text-slate-600">Marca a vacina de todo o lote em poucos toques no brete. Caderneta de papel não se perde mais.</p>
+                <div class="reveal-scale delay-100 bg-white p-6 rounded-xl border border-[#D7CCC8] hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(62,39,35,0.06)] transition-all duration-300">
+                    <i data-lucide="syringe" class="w-8 h-8 text-[#1E40AF] mb-4 bg-[#E0E7FF] p-1.5 rounded border border-[#C7D2FE]"></i>
+                    <h4 class="font-bold text-lg text-[#3E2723] mb-2">Sanidade</h4>
+                    <p class="text-[#6D4C41] text-sm">Marca a vacina de todo o lote em poucos toques. A caderneta de papel não se perde mais.</p>
                 </div>
                 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                        <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
-                    </div>
-                    <h4 class="font-bold text-lg mb-2">Tratamento</h4>
-                    <p class="text-slate-600">Gado sentiu lá no pasto? Puxa o celular e registra na hora. Fica tudo no histórico pra acompanhar depois.</p>
+                <div class="reveal-scale delay-200 bg-white p-6 rounded-xl border border-[#D7CCC8] hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(62,39,35,0.06)] transition-all duration-300">
+                    <i data-lucide="alert-triangle" class="w-8 h-8 text-[#B71C1C] mb-4 bg-[#FEE2E2] p-1.5 rounded border border-[#FECACA]"></i>
+                    <h4 class="font-bold text-lg text-[#3E2723] mb-2">Tratamento</h4>
+                    <p class="text-[#6D4C41] text-sm">Gado sentiu no pasto? Puxa o celular e registra. Fica no histórico de saúde pra acompanhar.</p>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                        <i data-lucide="baby" class="w-6 h-6 text-purple-600"></i>
-                    </div>
-                    <h4 class="font-bold text-lg mb-2">Toque e Prenhez</h4>
-                    <p class="text-slate-600">Registro de toque e previsão de parição. Tenha o mapa limpo da tua estação de monta.</p>
+                <div class="reveal-scale delay-300 bg-white p-6 rounded-xl border border-[#D7CCC8] hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(62,39,35,0.06)] transition-all duration-300">
+                    <i data-lucide="baby" class="w-8 h-8 text-[#7B1FA2] mb-4 bg-[#F3E5F5] p-1.5 rounded border border-[#E1BEE7]"></i>
+                    <h4 class="font-bold text-lg text-[#3E2723] mb-2">Toque e Prenhez</h4>
+                    <p class="text-[#6D4C41] text-sm">Registro de toque e previsão de parição. Tenha o mapa limpo da tua estação de monta.</p>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                    <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-4">
-                        <i data-lucide="wheat" class="w-6 h-6 text-amber-600"></i>
-                    </div>
-                    <h4 class="font-bold text-lg mb-2">Trato Diário</h4>
-                    <p class="text-slate-600">Controle do arraçoamento e trato do cocho. Garante que o planejamento nutricional tá sendo cumprido.</p>
+                <div class="reveal-scale delay-400 bg-white p-6 rounded-xl border border-[#D7CCC8] hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(62,39,35,0.06)] transition-all duration-300">
+                    <i data-lucide="wheat" class="w-8 h-8 text-[#8C4A26] mb-4 bg-[#F4EDE4] p-1.5 rounded border border-[#D7CCC8]"></i>
+                    <h4 class="font-bold text-lg text-[#3E2723] mb-2">Trato Diário</h4>
+                    <p class="text-[#6D4C41] text-sm">Controle do arraçoamento e trato do cocho. Garante que o planejamento tá sendo cumprido.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 8 & 9. RESULTADO FINAL + CTA -->
-    <section class="py-24 bg-white border-t border-slate-100">
+    <!-- 8. RESULTADO FINAL + CTA -->
+    <section class="py-28 bg-white border-t border-[#E0D4C8]">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <i data-lucide="leaf" class="w-16 h-16 text-emerald-500 mx-auto mb-6"></i>
-            <h2 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-8">
-                Transforma a tua estância numa operação de excelência
-            </h2>
+            <div class="reveal-up">
+                <h2 class="text-4xl md:text-5xl font-black text-[#3E2723] mb-10 leading-tight">
+                    Transforma a tua estância numa operação forte e produtiva
+                </h2>
+            </div>
             
-            <div class="flex flex-wrap justify-center gap-4 mb-12">
-                <span class="bg-emerald-50 text-emerald-800 px-4 py-2 rounded-full font-bold border border-emerald-100">✅ Mais lida com gestão</span>
-                <span class="bg-emerald-50 text-emerald-800 px-4 py-2 rounded-full font-bold border border-emerald-100">✅ Menos perda de dinheiro</span>
-                <span class="bg-emerald-50 text-emerald-800 px-4 py-2 rounded-full font-bold border border-emerald-100">✅ Produtividade alta</span>
-                <span class="bg-emerald-50 text-emerald-800 px-4 py-2 rounded-full font-bold border border-emerald-100">✅ Resultado financeiro</span>
+            <div class="reveal-up delay-100 flex flex-wrap justify-center gap-3 mb-12">
+                <span class="bg-[#FAF8F5] text-[#5D4037] px-4 py-2 rounded text-sm font-bold border border-[#E0D4C8]">Mais lida com gestão</span>
+                <span class="bg-[#FAF8F5] text-[#5D4037] px-4 py-2 rounded text-sm font-bold border border-[#E0D4C8]">Menos perda de dinheiro</span>
+                <span class="bg-[#FAF8F5] text-[#5D4037] px-4 py-2 rounded text-sm font-bold border border-[#E0D4C8]">Produtividade alta</span>
             </div>
 
-            <p class="text-2xl text-slate-600 font-medium italic mb-12">
-                "Quem mede, melhora. Quem controla a lida, lucra."
-            </p>
-
-            <div class="bg-slate-900 rounded-3xl p-10 md:p-16 shadow-2xl relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-64 h-64 bg-emerald-600/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
-                
-                <h3 class="text-2xl md:text-3xl text-white font-bold mb-8 relative z-10">
-                    Pega as rédeas da tua produção hoje mesmo. Bora começar a usar o Shamballa.
+            <div class="reveal-up delay-200 bg-[#F4EDE4] rounded-2xl p-10 md:p-14 border border-[#E0D4C8] shadow-sm transform hover:scale-[1.01] transition-transform duration-500">
+                <h3 class="text-2xl md:text-3xl text-[#3E2723] font-black mb-8 leading-tight">
+                    Pega as rédeas da tua produção hoje mesmo. <br/>BDê mais controle à sua operação com o Shamballa.
                 </h3>
                 
-                <button class="relative z-10 inline-flex items-center justify-center gap-3 bg-emerald-500 hover:bg-emerald-400 text-slate-900 px-10 py-5 rounded-full font-black text-xl transition-all transform hover:scale-105 shadow-[0_0_40px_rgba(16,185,129,0.4)]">
-                    👉 Assumir o controle
-                </button>
-                <p class="text-slate-400 mt-4 relative z-10 text-sm">Implantação ágil e suporte para garantir que a estância não pare.</p>
+                <a href="https://wa.me/5551991540557?text=Oi!%20Gostaria%20de%20saber%20mais%20sobre%20o%20Shamballa%20e%20como%20posso%20melhorar%20o%20manejo%20da%20minha%20estância." target="_blank" class="inline-flex items-center justify-center bg-[#8C4A26] hover:bg-[#6B371A] text-white px-10 py-5 rounded-lg font-bold text-lg transition-all hover:shadow-[0_8px_20px_rgba(140,74,38,0.3)] hover:-translate-y-1 w-full sm:w-auto">
+                    Assumir o controle agora
+                </a>
+                <p class="text-[#795548] mt-6 text-sm font-medium">Implantação direta e suporte para garantir que o trabalho não pare.</p>
             </div>
         </div>
     </section>
 
     <!-- FOOTER -->
-    <footer class="bg-slate-50 py-10 border-t border-slate-200 text-center">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-2 text-slate-600 font-bold">
-                <i data-lucide="leaf" class="w-5 h-5"></i> Shamballa
+    <footer class="bg-[#2D1B16] py-12 text-center">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex flex-col text-left">
+                <span class="text-2xl font-black tracking-tighter text-[#F4EDE4] leading-none">SHAMBALLA</span>
+                <span class="text-[0.65rem] font-bold text-[#A1887F] uppercase tracking-widest mt-1">execução em campo</span>
             </div>
-            <p class="text-slate-500 text-sm">© <span id="year"></span> Shamballa. Todos os direitos reservados.</p>
-            <div class="flex gap-4 text-sm text-slate-500">
-                <a href="#" class="hover:text-emerald-600">Termos de uso</a>
-                <a href="#" class="hover:text-emerald-600">Privacidade</a>
+            <p class="text-[#8D6E63] text-sm font-medium">© <span id="year"></span> Shamballa. Todos os direitos reservados.</p>
+            <div class="flex gap-6 text-sm text-[#8D6E63] font-medium">
+                <a href="#" class="hover:text-white transition-colors">Termos de uso</a>
+                <a href="#" class="hover:text-white transition-colors">Privacidade</a>
             </div>
         </div>
     </footer>
 
-    <!-- Scripts de inicialização -->
+    <!-- Scripts -->
     <script>
         // Inicializa os ícones do Lucide
         lucide.createIcons();
-        
-        // Define o ano atual no rodapé
         document.getElementById('year').textContent = new Date().getFullYear();
+
+        // Variável global para iniciar o Observer apenas após o Splash Screen
+        let startScrollAnimations = () => {};
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // ----------------------------------------------------
+            // 1. LÓGICA DO SPLASH SCREEN (Animação de Abertura)
+            // ----------------------------------------------------
+            // Força o retorno ao topo e trava a rolagem temporariamente
+            window.scrollTo(0, 0);
+            document.body.classList.add('overflow-hidden');
+            
+            const introLogo = document.getElementById('intro-logo');
+            const navbarLogo = document.getElementById('navbar-logo');
+            const splashBg = document.getElementById('splash-bg');
+            
+            // Passo 1: Fade-in suave no logo centralizado
+            setTimeout(() => {
+                introLogo.style.opacity = '1';
+            }, 200);
+
+            // Passo 2: Após uns 3s, o logo encolhe e desliza para a posição exata da Navbar
+            setTimeout(() => {
+                const targetRect = navbarLogo.getBoundingClientRect();
+                
+                // Calcula o centro do elemento de destino (Navbar Logo)
+                const targetCenterX = targetRect.left + (targetRect.width / 2);
+                const targetCenterY = targetRect.top + (targetRect.height / 2);
+                
+                // Transforma e movimenta o logo grande
+                introLogo.style.top = `${targetCenterY}px`;
+                introLogo.style.left = `${targetCenterX}px`;
+                introLogo.style.transform = `translate(-50%, -50%) scale(1)`;
+                
+                // O fundo branco se dissolve revelando a página bege
+                splashBg.style.opacity = '0';
+                
+                // Passo 3: Limpeza e início da página normal
+                setTimeout(() => {
+                    splashBg.remove();
+                    introLogo.remove();
+                    
+                    // Revela o logo real na Navbar de forma invisível
+                    navbarLogo.style.opacity = '1';
+                    
+                    // Libera a rolagem do usuário
+                    document.body.classList.remove('overflow-hidden');
+                    
+                    // Dispara a leitura das animações de rolagem
+                    startScrollAnimations();
+                }, 1200); // tempo que dura a transição
+                
+            }, 3000); // Tempo de tela branca
+
+            // ----------------------------------------------------
+            // 2. LÓGICA DO INTERSECTION OBSERVER (Scroll)
+            // ----------------------------------------------------
+            startScrollAnimations = () => {
+                const observerOptions = {
+                    root: null,
+                    rootMargin: '0px',
+                    threshold: 0.1
+                };
+
+                const observer = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('active');
+                            // observer.unobserve(entry.target); // Descomente para animar só 1x
+                        }
+                    });
+                }, observerOptions);
+
+                // Seleciona todos os elementos com animações rústicas e de escala
+                const animatedElements = document.querySelectorAll('.reveal-up, .reveal-left, .reveal-right, .reveal-scale');
+                animatedElements.forEach(el => observer.observe(el));
+            };
+
+            // Efeito de sombra sutil na Navbar ao rolar
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 10) {
+                    navbar.classList.add('shadow-md');
+                } else {
+                    navbar.classList.remove('shadow-md');
+                }
+            });
+        });
     </script>
 </body>
 </html>
